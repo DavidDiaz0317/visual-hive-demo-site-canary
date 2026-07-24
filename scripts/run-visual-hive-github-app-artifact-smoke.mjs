@@ -2,7 +2,7 @@
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import { stat } from "node:fs/promises";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -19,6 +19,7 @@ const leakPatterns = [
   /(^|[^A-Za-z])[A-Z]:(\\|\/)/
 ];
 
+await rm(outputDir, { recursive: true, force: true });
 await mkdir(outputDir, { recursive: true });
 
 const cliResolution = await resolveVisualHiveCli();
@@ -45,15 +46,25 @@ await run(process.execPath, [
 const resultPath = path.join(outputDir, "github-app-webhook-result.json");
 const previewPath = path.join(outputDir, "github-app-issue-preview.md");
 const result = JSON.parse(await readFile(resultPath, "utf8"));
-const preview = await readFile(previewPath, "utf8");
+const actions = Array.isArray(result.actions) ? result.actions : [];
+const publishesIssue = actions.some((action) => action.action === "create_or_update_visual_hive_issue");
+const delegatesToHive = actions.some(
+  (action) => action.action === "ignore" && String(action.reason ?? "").startsWith("managed_by_hive:")
+);
 
 assert(result.externalCallsMade === 0, "GitHub App artifact smoke must make zero external calls.");
 assert(result.networkCallsMade === 0, "GitHub App artifact smoke must make zero network calls.");
 assert(result.checkoutPerformed === false, "GitHub App artifact smoke must not check out code.");
 assert(result.repoCodeExecuted === false, "GitHub App artifact smoke must not execute repo code.");
-assert(Array.isArray(result.actions) && result.actions.some((action) => action.action === "create_or_update_visual_hive_issue"), "GitHub App artifact smoke must produce a create/update issue action.");
+assert(publishesIssue !== delegatesToHive, "GitHub App artifact smoke must either publish an issue preview or delegate issue ownership to Hive.");
 assertNoPathLeaks(JSON.stringify(result), "github-app-webhook-result.json");
-assertNoPathLeaks(preview, "github-app-issue-preview.md");
+
+if (publishesIssue) {
+  assert(existsSync(previewPath), "Standalone GitHub App publishing must produce an issue preview.");
+  assertNoPathLeaks(await readFile(previewPath, "utf8"), "github-app-issue-preview.md");
+} else {
+  assert(!existsSync(previewPath), "Hive-managed lifecycle suppression must not produce a standalone issue preview.");
+}
 
 const summary = {
   schemaVersion: "visual-hive-demo.github-app-artifact-smoke.v1",
@@ -62,12 +73,13 @@ const summary = {
   visualHiveCliPath: toRepoDisplayPath(cliResolution.displayPath),
   artifactRoot: ".visual-hive",
   outputDir: ".visual-hive/github-app-artifact-smoke",
-  actions: result.actions.map((action) => action.action),
+  actions: actions.map((action) => action.action),
+  lifecycleDisposition: publishesIssue ? "standalone_issue_preview" : "managed_by_hive",
   externalCallsMade: result.externalCallsMade,
   networkCallsMade: result.networkCallsMade,
   checkoutPerformed: result.checkoutPerformed,
   repoCodeExecuted: result.repoCodeExecuted,
-  issuePreviewPath: ".visual-hive/github-app-artifact-smoke/github-app-issue-preview.md",
+  issuePreviewPath: publishesIssue ? ".visual-hive/github-app-artifact-smoke/github-app-issue-preview.md" : null,
   resultPath: ".visual-hive/github-app-artifact-smoke/github-app-webhook-result.json",
   realGithubIssuesCreated: 0,
   sourceMutations: 0,
