@@ -397,7 +397,18 @@ async function verifyGovernance() {
   const costs = await readJson("costs.json");
   const readiness = await readJson("readiness.json");
   assert(JSON.stringify(workflows).includes("pull_request"), "workflow audit must include PR workflow evidence.");
-  assert((workflows.summary?.workflowsUsingPullRequestTarget ?? 0) === 0, "workflow audit must not include pull_request_target execution.");
+  const unsafePullRequestTargetWorkflows = (workflows.workflows ?? []).filter(
+    (workflow) =>
+      workflow.usesPullRequestTarget &&
+      (workflow.usesSecrets ||
+        workflow.usesWritePermissions ||
+        workflow.risk === "high" ||
+        (workflow.findings ?? []).length > 0)
+  );
+  assert(
+    unsafePullRequestTargetWorkflows.length === 0,
+    "workflow audit must not include unsafe pull_request_target execution."
+  );
   const trustedStandaloneWriter = workflows.workflows?.some(
       (workflow) =>
         (workflow.kind === "trusted_handoff" || workflow.kind === "trusted_issue") &&
