@@ -414,8 +414,12 @@ async function verifyGovernance() {
         (workflow.kind === "trusted_handoff" || workflow.kind === "trusted_issue") &&
         workflow.permissions?.issues === "write"
     );
+  const integratedSchemaVersion = integratedConfig?.schema_version;
+  const hasSupportedIntegratedSchema =
+    typeof integratedSchemaVersion === "string" &&
+    /^hive\.integrated-(?:repository-)?config\.v\d+$/.test(integratedSchemaVersion);
   const integratedHiveOwner =
-    integratedConfig?.schema_version === "hive.integrated-config.v1" &&
+    hasSupportedIntegratedSchema &&
     integratedConfig?.visual_hive === true &&
     workflows.workflows?.some(
       (workflow) =>
@@ -509,7 +513,18 @@ async function verifyIssueQueue() {
   assert(issuesMarkdown.includes("Visual Hive") && issuesMarkdown.includes("Dedupe"), "issues.md must be human-readable issue evidence.");
   assert(queue.schemaVersion === "visual-hive.issue-queue.v1", "issue-queue.json must use the issue queue schema.");
   assert(Array.isArray(queue.queues?.ready_for_hive), "issue queue must group issues for Hive readiness.");
-  assert(publish.status === "dry_run_written", "default issue publish script must remain dry-run.");
+  assert(publish.mode === "dry_run", "default issue publish script must remain dry-run.");
+  assert(
+    publish.status === "dry_run_written" || publish.status === "managed_by_hive",
+    "default issue publish script must either write a dry-run plan or defer to Hive ownership."
+  );
+  if (publish.status === "managed_by_hive") {
+    assert(publish.lifecycle?.owner === "hive", "Hive-managed issue publication must identify Hive as lifecycle owner.");
+    assert(
+      publish.decisions?.every((decision) => decision.action === "blocked" && decision.reason?.startsWith("managed_by_hive:")),
+      "Hive-managed issue publication must block every standalone Visual Hive write."
+    );
+  }
   assert((publish.externalCallsMade ?? 0) === 0, "issue publish dry-run must make zero external calls.");
   assert((publish.networkCallsMade ?? 0) === 0, "issue publish dry-run must make zero network calls.");
   assert((publish.realGithubIssuesCreated ?? 0) === 0, "issue publish dry-run must create zero real issues.");
