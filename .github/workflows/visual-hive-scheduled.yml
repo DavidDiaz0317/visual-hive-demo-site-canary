@@ -39,7 +39,7 @@ jobs:
           echo "VISUAL_HIVE_CLI=$RUNNER_TEMP/visual-hive-tooling/packages/cli/dist/index.js" >> "$GITHUB_ENV"
 
       - name: Install and build demo app
-        run: npm ci && npx playwright install --with-deps chromium && npm run build && npm run typecheck
+        run: npm ci && PLAYWRIGHT_SKIP_BROWSER_GC=1 npx playwright install --with-deps chromium && npm run build && npm run typecheck
 
       - name: Run scheduled Visual Hive evidence chain
         run: |
