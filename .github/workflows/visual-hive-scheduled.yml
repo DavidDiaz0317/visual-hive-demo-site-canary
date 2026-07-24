@@ -21,7 +21,7 @@ jobs:
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           repository: DavidDiaz0317/visual-hive
-          ref: main
+          ref: 9fb0eebf4ec4c3f6653092c1fd53795d4d80523e
           path: .visual-hive-tooling
 
       - name: Setup Node
@@ -31,7 +31,7 @@ jobs:
 
       - name: Install and build Visual Hive
         working-directory: .visual-hive-tooling
-        run: npm ci && npm run build
+        run: npm ci && npx playwright install --with-deps chromium && npm run build
 
       - name: Move Visual Hive tooling outside client scan path
         run: |
