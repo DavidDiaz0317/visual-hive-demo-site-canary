@@ -72,6 +72,7 @@ mutation:
         - mobile-overflow
         - broken-image
     runOn:
+        pullRequest: false
         schedule: true
 project:
     defaultBranch: main
@@ -94,6 +95,7 @@ selection:
             - storybook-visual-hive-test-lab-fixtures-command-matrix-row-visual-stability
           pattern: src/**
           risk: low
+    ignoreChangedFiles: []
 targets:
     componentLibrary:
         build: npm run build-storybook
