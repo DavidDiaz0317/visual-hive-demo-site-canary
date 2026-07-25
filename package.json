@@ -54,6 +54,7 @@
     "vh:snapshot": "node scripts/visual-hive-cli.mjs snapshot --config visual-hive.config.yaml --read-only",
     "vh:history": "node scripts/visual-hive-cli.mjs history --config visual-hive.config.yaml --record",
     "vh:artifacts": "node scripts/visual-hive-cli.mjs artifacts --config visual-hive.config.yaml",
+    "vh:artifacts:verify": "node scripts/verify-visual-hive-artifact-index.mjs",
     "vh:evidence": "node scripts/visual-hive-cli.mjs evidence --config visual-hive.config.yaml",
     "vh:layers": "node scripts/visual-hive-cli.mjs layers --config visual-hive.config.yaml",
     "vh:verdict": "node scripts/visual-hive-cli.mjs verdict --config visual-hive.config.yaml",

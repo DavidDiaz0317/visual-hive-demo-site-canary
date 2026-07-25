@@ -62,6 +62,10 @@ jobs:
           npm run vh:agent:write-preview
           npm run vh:snapshot
           npm run vh:report -- --github-step-summary
+          # This must remain the final evidence-producing command. The verifier
+          # below is read-only and fails if anything changed after the seal.
+          npm run vh:artifacts -- --complete
+          npm run vh:artifacts:verify
 
       - name: Upload Visual Hive artifacts
         if: always()
