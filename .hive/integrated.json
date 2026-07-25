@@ -1,0 +1,76 @@
+{
+  "acmm_level": 5,
+  "allowed_auto_merge_paths": [
+    "**/*.spec.*",
+    "**/*.test.*",
+    "**/*_test.go",
+    "test/**",
+    "tests/**"
+  ],
+  "allowed_auto_merge_risk": [
+    0
+  ],
+  "allowed_repair_paths": [
+    "src/**",
+    "**/src/**",
+    "public/**",
+    "**/public/**",
+    "index.html",
+    "**/index.html",
+    "visual-hive.config.yaml",
+    "scripts/testing/**",
+    "**/scripts/testing/**",
+    "test/**",
+    "tests/**",
+    "**/test/**",
+    "**/tests/**",
+    "**/*.test.*",
+    "**/*.spec.*",
+    "**/*_test.go"
+  ],
+  "automation": "repair-pr",
+  "coverage": "comprehensive",
+  "default_branch": "main",
+  "distribution_manifest_sha256": "",
+  "execution_mode": "local",
+  "hive_commit": "",
+  "hive_release_repository": "",
+  "hive_release_version": "",
+  "hosted_controller_protocol": 0,
+  "hosted_schedule": "",
+  "hosted_state_branch": "hive/state-1311708545",
+  "hosted_workflow_sha256": "",
+  "max_active_issues": 5,
+  "max_repair_attempts": 4,
+  "provider": "codex",
+  "repository": "DavidDiaz0317/visual-hive-demo-site-canary",
+  "repository_id": "1311708545",
+  "run_interval_seconds": 900,
+  "schema_version": "hive.integrated-repository-config.v3",
+  "setup_authorization_actor_id": 183157248,
+  "test_commands": [
+    [
+      "node",
+      "--test"
+    ],
+    [
+      "npm",
+      "run",
+      "build"
+    ],
+    [
+      "npm",
+      "run",
+      "build-storybook"
+    ],
+    [
+      "npm",
+      "run",
+      "typecheck"
+    ]
+  ],
+  "visual_hive": true,
+  "visual_hive_config_digest": "a9babc4dc1ee0f11e19a5ccd8854e48daf62779fd469c2ee278424c26317e89a",
+  "visual_hive_ref": "59df58add8027c61e2a643801a6ef0e1b55aa8b0",
+  "visual_hive_repository": "DavidDiaz0317/visual-hive"
+}
