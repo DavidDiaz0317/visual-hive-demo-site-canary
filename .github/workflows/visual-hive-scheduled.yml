@@ -21,7 +21,7 @@ jobs:
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           repository: DavidDiaz0317/visual-hive
-          ref: 9f48408f9f090fc43fce0c7c6171771f05660444
+          ref: 1de3765924043ba87d46f200e8883b9233d94a18
           path: .visual-hive-tooling
 
       - name: Setup Node
