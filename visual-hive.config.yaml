@@ -296,6 +296,10 @@ contracts:
           name: command-matrix-desktop
           route: /commands
           viewport: desktop
+        - fullPage: true
+          name: command-matrix-readiness-mobile
+          route: /commands
+          viewport: mobile
       selectors:
         mustExist:
             - '[data-testid=''command-matrix'']'
