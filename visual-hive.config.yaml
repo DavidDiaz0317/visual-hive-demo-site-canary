@@ -1,742 +1,712 @@
-project:
-  name: visual-hive-demo-site
-  type: react-vite
-  defaultBranch: main
-  setupProfile: complex-app
-
-targets:
-  localPreview:
-    kind: command
-    install: "npm ci"
-    build: "npm run build"
-    serve: "npm run preview -- --port 4173 --strictPort"
-    url: "http://127.0.0.1:4173"
-    prSafe: true
-    schedule: "*/15 * * * *"
-    cost: cheap
-
-  fullStackPreview:
-    kind: commandGroup
-    url: "http://127.0.0.1:4174"
-    setup:
-      - "npm run build"
-    services:
-      - name: mock-api
-        command: "npm run mock-api -- --port 4274"
-        url: "http://127.0.0.1:4274"
-        healthPath: "/health"
-        readinessTimeoutMs: 10000
-      - name: web
-        command: "npm run preview -- --port 4174 --strictPort"
-        url: "http://127.0.0.1:4174"
-        readinessTimeoutMs: 15000
-    prSafe: true
-    schedule: "0 * * * *"
-    cost: medium
-
-  componentLibrary:
-    kind: storybook
-    url: "http://127.0.0.1:6006"
-    build: "npm run build-storybook"
-    serve: "npm run storybook"
-    stories:
-      - "src/App.stories.tsx"
-    components:
-      - "src/App.tsx"
-    prSafe: true
-    schedule: "0 */6 * * *"
-    cost: medium
-
-  deployPreview:
-    kind: deployPreview
-    provider: github-pages
-    urlEnv: VISUAL_HIVE_DEMO_PREVIEW_URL
-    fallbackUrl: "https://daviddiaz0317.github.io/visual-hive-demo-site/"
-    prSafe: true
-    schedule: "0 */12 * * *"
-    cost: cheap
-
-  hostedReference:
-    kind: url
-    url: "https://daviddiaz0317.github.io/visual-hive-demo-site/"
-    prSafe: false
-    schedule: "0 6 * * *"
-    cost: cheap
-
-  unsafeHosted:
-    kind: protected
-    url: "https://example.com"
-    prSafe: false
-    schedule: "0 */4 * * *"
-    cost: expensive
-    requiresSecrets:
-      - DEMO_PROTECTED_TOKEN
-
-contracts:
-  - id: app-shell-stability
-    description: Test lab overview shell should render the dashboard, scenario gallery, lane list, matrix, and artifacts.
-    target: localPreview
-    severity: high
-    runOn:
-      pullRequest: true
-      schedule: true
-    waitFor:
-      - selector: "[data-testid='testlab-shell']"
-        state: visible
-        timeoutMs: 5000
-    steps:
-      - action: goto
-        route: "/"
-        description: "Navigate to the default app shell."
-        state: visible
-        timeoutMs: 15000
-      - action: assertVisible
-        selector: "[data-testid='dashboard-page']"
-        description: "Dashboard page is visible."
-        state: visible
-        timeoutMs: 15000
-    selectors:
-      mustExist:
-        - "[data-testid='dashboard-page']"
-        - "[data-testid='testlab-shell']"
-        - "[data-testid='run-health-strip']"
-        - "[data-testid='scenario-gallery']"
-        - "[data-testid='target-lane-list']"
-        - "[data-testid='coverage-matrix']"
-        - "[data-testid='artifact-card']"
-        - "[data-testid='demo-badge']"
-      mustNotExist:
-        - "[data-testid='login-page']"
-        - "[data-testid='protected-route']"
-        - "[data-testid='loading-state']"
-      textMustExist:
-        - "Visual Hive Test Lab"
-        - "Demo metrics loaded"
-        - "Seeded issue gallery"
-      textMustNotExist:
-        - "Continue with GitHub"
-        - "Protected route bypass"
-        - "Loading dashboard data"
-    screenshots:
-      - name: app-shell-desktop
-        route: "/"
-        viewport: desktop
-        fullPage: true
-        mask:
-          - "[data-testid='dynamic-run-id']"
-      - name: app-shell-mobile
-        route: "/"
-        viewport: mobile
-        fullPage: true
-        mask:
-          - "[data-testid='dynamic-run-id']"
-
-  - id: public-auth-boundary
-    description: Public demo target must never expose login or protected controls, and its critical action must remain usable.
-    target: localPreview
-    severity: critical
-    runOn:
-      pullRequest: true
-      schedule: true
-    waitFor:
-      - selector: "[data-testid='dashboard-page']"
-        state: visible
-        timeoutMs: 5000
-    failOnConsoleError: true
-    expectedConsoleErrors: []
-    steps:
-      - action: goto
-        route: "/"
-        description: "Start from the public default demo route."
-      - action: assertVisible
-        selector: "[data-testid='critical-action-button']"
-        description: "Critical action remains visible."
-      - action: click
-        selector: "[data-testid='critical-action-button']"
-        description: "Critical action remains interactable."
-      - action: assertText
-        selector: "[data-testid='protected-check-result']"
-        text: "Protected check passed"
-        description: "Interaction updated deterministic local state."
-    selectors:
-      mustExist:
-        - "[data-testid='dashboard-page']"
-        - "[data-testid='critical-action-button']"
-        - "[data-testid='demo-badge']"
-      mustNotExist:
-        - "[data-testid='login-page']"
-        - "[data-testid='github-login-button']"
-        - "[data-testid='protected-route']"
-        - "[data-testid='loading-state']"
-      textMustExist:
-        - "Run protected check"
-        - "Demo metrics loaded"
-      textMustNotExist:
-        - "Continue with GitHub"
-        - "Protected route bypass"
-        - "Loading dashboard data"
-    screenshots:
-      - name: auth-boundary-desktop
-        route: "/"
-        viewport: desktop
-        fullPage: true
-        mask:
-          - "[data-testid='dynamic-run-id']"
-      - name: public-auth-boundary-mobile
-        route: "/"
-        viewport: mobile
-        fullPage: true
-        mask:
-          - "[data-testid='dynamic-run-id']"
-
-  - id: scenario-gallery-contract
-    description: Scenario gallery must expose all seeded mutation routes for live demonstrations.
-    target: localPreview
-    severity: high
-    runOn:
-      pullRequest: true
-      schedule: true
-    waitFor:
-      - selector: "[data-testid='seeded-issue-api-500']"
-        state: visible
-        timeoutMs: 5000
-    selectors:
-      mustExist:
-        - "[data-testid='seeded-issue-hide-critical-button']"
-        - "[data-testid='seeded-issue-force-login-on-demo']"
-        - "[data-testid='seeded-issue-remove-demo-badge']"
-        - "[data-testid='seeded-issue-api-500']"
-        - "[data-testid='seeded-issue-empty-data']"
-        - "[data-testid='seeded-issue-mobile-overflow']"
-        - "[data-testid='seeded-issue-route-guard-bypass']"
-        - "[data-testid='seeded-issue-hidden-error-banner']"
-        - "[data-testid='seeded-issue-broken-image']"
-        - "[data-testid='seeded-issue-removed-accessible-name']"
-        - "[data-testid='seeded-issue-theme-token-drift']"
-        - "[data-testid='seeded-issue-stale-loading-state']"
-      textMustExist:
-        - "All built-in operators have visible targets"
-        - "api-500"
-        - "stale-loading-state"
-    screenshots:
-      - name: scenarios-desktop
-        route: "/scenarios"
-        viewport: desktop
-        fullPage: true
-      - name: scenario-gallery-contract-mobile
-        route: "/scenarios"
-        viewport: mobile
-        fullPage: true
-
-  - id: api-error-state-contract
-    description: API failure state must show a visible alert and remain useful for hidden-alert mutations.
-    target: localPreview
-    severity: high
-    runOn:
-      pullRequest: true
-      schedule: true
-    waitFor:
-      - selector: "[data-testid='error-banner']"
-        state: visible
-        timeoutMs: 5000
-    steps:
-      - action: goto
-        route: "/scenarios?issue=api-500"
-        description: "Seed API failure state."
-      - action: assertVisible
-        selector: "[data-testid='error-banner']"
-        description: "Error banner is visible."
-      - action: assertText
-        selector: "[data-testid='error-banner']"
-        text: "Error state visible"
-        description: "Alert copy is preserved."
-    selectors:
-      mustExist:
-        - "[data-testid='error-banner']"
-        - "[data-testid='dashboard-page']"
-      mustNotExist:
-        - "[data-testid='loading-state']"
-      textMustExist:
-        - "Error state visible"
-        - "Seeded API 500 state"
-    screenshots:
-      - name: api-error-desktop
-        route: "/scenarios?issue=api-500"
-        viewport: desktop
-        fullPage: true
-      - name: api-error-state-contract-mobile
-        route: "/scenarios?issue=api-500"
-        viewport: mobile
-        fullPage: true
-
-  - id: data-empty-state-contract
-    description: Empty data state should remain explicit rather than silently rendering partial cards.
-    target: localPreview
-    severity: medium
-    runOn:
-      pullRequest: true
-      schedule: true
-    waitFor:
-      - selector: "[data-testid='empty-data-state']"
-        state: visible
-        timeoutMs: 5000
-    steps:
-      - action: goto
-        route: "/?issue=empty-data"
-        description: "Seed the empty dashboard data state."
-      - action: assertVisible
-        selector: "[data-testid='empty-data-state']"
-        description: "Empty data state is visible."
-    selectors:
-      mustExist:
-        - "[data-testid='empty-data-state']"
-      textMustExist:
-        - "No dashboard records"
-        - "Seeded empty data state"
-    screenshots:
-      - name: empty-data-desktop
-        route: "/?issue=empty-data"
-        viewport: desktop
-        fullPage: true
-
-  - id: mobile-layout-stability
-    description: Mobile app shell should not expose intentional overflow probes or unstable layout.
-    target: localPreview
-    severity: high
-    runOn:
-      pullRequest: true
-      schedule: true
-    waitFor:
-      - selector: "[data-testid='dashboard-page']"
-        state: visible
-        timeoutMs: 5000
-    selectors:
-      mustExist:
-        - "[data-testid='dashboard-page']"
-        - "[data-testid='critical-action-button']"
-      mustNotExist:
-        - "[data-testid='mobile-overflow-probe']"
-    screenshots:
-      - name: app-shell-mobile-stable
-        route: "/"
-        viewport: mobile
-        fullPage: true
-        mask:
-          - "[data-testid='dynamic-run-id']"
-
-  - id: visual-asset-contract
-    description: Preview image and artifact cards should render for visual-provider and screenshot handoff demos.
-    target: localPreview
-    severity: medium
-    runOn:
-      pullRequest: true
-      schedule: true
-    waitFor:
-      - selector: "[data-testid='dashboard-preview-image']"
-        state: visible
-        timeoutMs: 5000
-    selectors:
-      mustExist:
-        - "[data-testid='dashboard-preview-image']"
-        - "[data-testid='artifact-card']"
-      mustNotExist:
-        - "[data-testid='broken-image-warning']"
-      textMustExist:
-        - "Healthy by default"
-        - "hive/hive-export.json"
-    screenshots:
-      - name: visual-assets-desktop
-        route: "/"
-        viewport: desktop
-        fullPage: true
-        mask:
-          - "[data-testid='dynamic-run-id']"
-      - name: visual-asset-contract-mobile
-        route: "/"
-        viewport: mobile
-        fullPage: true
-        mask:
-          - "[data-testid='dynamic-run-id']"
-
-  - id: command-matrix-readiness
-    description: Command matrix should document fast, governance, provider, and Hive demo commands.
-    target: localPreview
-    severity: medium
-    runOn:
-      pullRequest: true
-      schedule: true
-    waitFor:
-      - selector: "[data-testid='command-matrix']"
-        state: visible
-        timeoutMs: 5000
-    selectors:
-      mustExist:
-        - "[data-testid='command-matrix']"
-        - "[data-testid='command-row-doctor']"
-        - "[data-testid='command-row-mutate']"
-        - "[data-testid='command-row-hive']"
-      textMustExist:
-        - "npm run vh:mutate"
-        - "npm run vh:hive-export"
-    screenshots:
-      - name: command-matrix-desktop
-        route: "/commands"
-        viewport: desktop
-        fullPage: true
-
-  - id: hive-integration-lane
-    description: Integration page should explain dry-run Hive, provider, GitHub, and commandGroup lanes.
-    target: localPreview
-    severity: medium
-    runOn:
-      pullRequest: true
-      schedule: true
-    waitFor:
-      - selector: "[data-testid='hive-integration-lane']"
-        state: visible
-        timeoutMs: 5000
-    selectors:
-      mustExist:
-        - "[data-testid='hive-integration-lane']"
-        - "[data-testid='provider-readiness']"
-        - "[data-testid='github-workflow-list']"
-        - "[data-testid='mock-api-health']"
-      textMustExist:
-        - "Dry-run handoff before trusted repair"
-        - "No provider or Hive API calls by default"
-    screenshots:
-      - name: integrations-desktop
-        route: "/integrations"
-        viewport: desktop
-        fullPage: true
-
-  - id: guarded-repair-policy
-    description: Guarded repair page should state that Hive can propose work while Visual Hive owns final validation.
-    target: localPreview
-    severity: high
-    runOn:
-      pullRequest: true
-      schedule: true
-    waitFor:
-      - selector: "[data-testid='guarded-repair-policy']"
-        state: visible
-        timeoutMs: 5000
-    selectors:
-      mustExist:
-        - "[data-testid='guarded-repair-policy']"
-      textMustExist:
-        - "Visual Hive deterministic verdict engine"
-        - "Human review"
-        - "Rerun Visual Hive"
-    screenshots:
-      - name: guarded-repair-desktop
-        route: "/guarded"
-        viewport: desktop
-        fullPage: true
-      - name: guarded-repair-policy-mobile
-        route: "/guarded"
-        viewport: mobile
-        fullPage: true
-
-  - id: fullstack-command-group-health
-    description: CommandGroup target should start the web app and mock API service for lifecycle evidence.
-    target: fullStackPreview
-    severity: medium
-    runOn:
-      pullRequest: false
-      schedule: true
-    waitFor:
-      - selector: "[data-testid='mock-api-health']"
-        state: visible
-        timeoutMs: 5000
-    selectors:
-      mustExist:
-        - "[data-testid='mock-api-health']"
-      textMustExist:
-        - "Mock API service target"
-    screenshots:
-      - name: command-group-integrations
-        route: "/integrations"
-        viewport: desktop
-        fullPage: true
-
-  - id: component-lab-storybook
-    description: Storybook target should render fixture components for component-level visual review.
-    target: componentLibrary
-    severity: medium
-    runOn:
-      pullRequest: false
-      schedule: true
-    waitFor:
-      - selector: "[data-testid='seeded-issue-api-500']"
-        state: visible
-        timeoutMs: 10000
-    selectors:
-      mustExist:
-        - "[data-testid='seeded-issue-api-500']"
-      textMustExist:
-        - "API outage"
-        - "api-500"
-    screenshots:
-      - name: storybook-scenario-card
-        route: "/iframe.html?id=visual-hive-test-lab-fixtures--scenario-mutation-card&viewMode=story"
-        viewport: desktop
-        fullPage: true
-
-  - id: deploy-preview-smoke
-    description: Deploy-preview target documents how hosted preview URLs are represented.
-    target: deployPreview
-    severity: low
-    runOn:
-      pullRequest: false
-      schedule: true
-    selectors:
-      mustExist:
-        - "body"
-    screenshots:
-      - name: deploy-preview-home
-        route: "/visual-hive-demo-site/"
-        viewport: desktop
-        fullPage: true
-
-  - id: hosted-reference-smoke
-    description: Hosted reference target is available for manual URL-target demos, not default local PR runs.
-    target: hostedReference
-    severity: low
-    runOn:
-      pullRequest: false
-      schedule: false
-    selectors:
-      mustExist:
-        - "body"
-
-  - id: live-cluster-protected-lane
-    description: Protected scheduled target illustrates unsafe target filtering and missing-secret reporting.
-    target: unsafeHosted
-    severity: high
-    runOn:
-      pullRequest: false
-      schedule: true
-    selectors:
-      mustExist:
-        - "body"
-
-viewports:
-  desktop:
-    width: 1440
-    height: 900
-  tablet:
-    width: 768
-    height: 1024
-  mobile:
-    width: 390
-    height: 844
-
-visual:
-  maxDiffPixelRatio: 0.01
-  updateSnapshots: false
-  failOnMissingBaselineInCI: true
-  baselinePlatform: platform
-  snapshotDir: "visual-hive.baselines"
-  artifactDir: ".visual-hive/artifacts"
-
-selection:
-  changedFiles:
-    - pattern: "src/App.tsx"
-      contracts:
-        - app-shell-stability
-        - public-auth-boundary
-        - scenario-gallery-contract
-        - command-matrix-readiness
-        - hive-integration-lane
-        - guarded-repair-policy
-      risk: high
-    - pattern: "src/styles.css"
-      contracts:
-        - app-shell-stability
-        - mobile-layout-stability
-        - visual-asset-contract
-      risk: high
-    - pattern: "src/**/*.stories.tsx"
-      contracts:
-        - component-lab-storybook
-      risk: medium
-    - pattern: "scripts/mock-api.mjs"
-      contracts:
-        - fullstack-command-group-health
-      risk: medium
-    - pattern: ".github/workflows/**"
-      contracts:
-        - hive-integration-lane
-        - command-matrix-readiness
-      risk: medium
-    - pattern: "visual-hive.config.yaml"
-      contracts:
-        - app-shell-stability
-        - command-matrix-readiness
-        - hive-integration-lane
-      risk: high
-    - pattern: "public/**"
-      contracts:
-        - visual-asset-contract
-        - data-empty-state-contract
-      risk: medium
-  ignoreChangedFiles:
-    - pattern: "README.md"
-      reason: "docs-only change is useful for plan filtering demos"
-    - pattern: "docs/**"
-      reason: "docs-only change is useful for plan filtering demos"
-
-mutation:
-  enabled: true
-  runOn:
-    pullRequest: false
-    schedule: true
-  minScore: 0.7
-  operators:
-    - id: hide-critical-button
-      contracts:
-        - public-auth-boundary
-    - id: force-login-on-demo
-      contracts:
-        - public-auth-boundary
-    - id: remove-demo-badge
-      contracts:
-        - app-shell-stability
-        - public-auth-boundary
-    - id: api-500
-      contracts:
-        - public-auth-boundary
-        - app-shell-stability
-    - id: empty-data
-      contracts:
-        - data-empty-state-contract
-        - visual-asset-contract
-    - id: mobile-overflow
-      contracts:
-        - mobile-layout-stability
-    - id: route-guard-bypass
-      contracts:
-        - public-auth-boundary
-    - id: hidden-error-banner
-      contracts:
-        - api-error-state-contract
-    - id: broken-image
-      contracts:
-        - visual-asset-contract
-    - id: removed-accessible-name
-      contracts:
-        - public-auth-boundary
-    - id: theme-token-drift
-      contracts:
-        - app-shell-stability
-        - mobile-layout-stability
-    - id: stale-loading-state
-      contracts:
-        - public-auth-boundary
-        - mobile-layout-stability
-
 ai:
-  enabled: false
-  provider: none
-  model: offline-heuristics
-  neverSoleOracle: true
-  createIssuePrompt: true
-  maxDailyRuns: 5
-  maxPromptTokens: 50000
-  maxEstimatedCostUsd: 0
-
-providers:
-  playwright:
-    enabled: true
-    mode: external
-    requiredEnv: []
-  argos:
+    createIssuePrompt: true
     enabled: false
-    mode: external
-    requiredEnv:
-      - ARGOS_TOKEN
-    upload:
-      buildName: "visual-hive-demo"
-      includeActualScreenshots: true
-      includeDiffScreenshots: true
-      includeTextArtifacts: true
-      extraFiles:
-        - ".visual-hive/report.json"
-        - ".visual-hive/evidence-packet.json"
-        - ".visual-hive/verdict.json"
-        - ".visual-hive/hive/hive-export.json"
-  percy:
-    enabled: false
-    mode: external
-    requiredEnv:
-      - PERCY_TOKEN
-  chromatic:
-    enabled: false
-    mode: external
-    requiredEnv:
-      - CHROMATIC_PROJECT_TOKEN
-  applitools:
-    enabled: false
-    mode: external
-    requiredEnv:
-      - APPLITOOLS_API_KEY
-  storybook:
-    enabled: true
-    mode: mock
-    requiredEnv: []
-  github-checks:
-    enabled: false
-    mode: external
-    requiredEnv:
-      - GITHUB_TOKEN
-
-integrations:
-  hive:
-    enabled: true
-    mode: dry_run
-    acmmLevel: 5
-    defaultActor: quality
-    labels:
-      - visual-hive
-      - hive/quality
-      - ai-ready
-      - live-demo
-    export:
-      beads: true
-      knowledgeFacts: true
-      knowledgeGraph: true
-      wikiVault: true
-      repairWorkOrders: true
-      maxFacts: 80
-    repair:
-      enabled: true
-      prOnly: true
-      maxAttempts: 1
-      requireHumanReview: true
-      rerunVisualHive: true
-      branchPrefix: "hive/visual-hive-"
-    beadApi:
-      tokenEnv: HIVE_DASHBOARD_TOKEN
-      agent: quality
-
+    maxDailyRuns: 5
+    maxEstimatedCostUsd: 0
+    maxPromptTokens: 50000
+    model: offline-heuristics
+    neverSoleOracle: true
+    provider: none
+contracts:
+    - description: Test lab overview shell should render the dashboard, scenario gallery, lane list, matrix, and artifacts.
+      id: app-shell-stability
+      runOn:
+        pullRequest: true
+        schedule: true
+      screenshots:
+        - fullPage: true
+          mask:
+            - '[data-testid=''dynamic-run-id'']'
+          name: app-shell-desktop
+          route: /
+          viewport: desktop
+        - fullPage: true
+          mask:
+            - '[data-testid=''dynamic-run-id'']'
+          name: app-shell-mobile
+          route: /
+          viewport: mobile
+      selectors:
+        mustExist:
+            - '[data-testid=''dashboard-page'']'
+            - '[data-testid=''testlab-shell'']'
+            - '[data-testid=''run-health-strip'']'
+            - '[data-testid=''scenario-gallery'']'
+            - '[data-testid=''target-lane-list'']'
+            - '[data-testid=''coverage-matrix'']'
+            - '[data-testid=''artifact-card'']'
+            - '[data-testid=''demo-badge'']'
+        mustNotExist:
+            - '[data-testid=''login-page'']'
+            - '[data-testid=''protected-route'']'
+            - '[data-testid=''loading-state'']'
+        textMustExist:
+            - Visual Hive Test Lab
+            - Demo metrics loaded
+            - Seeded issue gallery
+        textMustNotExist:
+            - Continue with GitHub
+            - Protected route bypass
+            - Loading dashboard data
+      severity: high
+      steps:
+        - action: goto
+          description: Navigate to the default app shell.
+          route: /
+          state: visible
+          timeoutMs: 15000
+        - action: assertVisible
+          description: Dashboard page is visible.
+          selector: '[data-testid=''dashboard-page'']'
+          state: visible
+          timeoutMs: 15000
+      target: localPreview
+      waitFor:
+        - selector: '[data-testid=''testlab-shell'']'
+          state: visible
+          timeoutMs: 5000
+    - description: Public demo target must never expose login or protected controls, and its critical action must remain usable.
+      expectedConsoleErrors: []
+      failOnConsoleError: true
+      id: public-auth-boundary
+      runOn:
+        pullRequest: true
+        schedule: true
+      screenshots:
+        - fullPage: true
+          mask:
+            - '[data-testid=''dynamic-run-id'']'
+          name: auth-boundary-desktop
+          route: /
+          viewport: desktop
+        - fullPage: true
+          mask:
+            - '[data-testid=''dynamic-run-id'']'
+          name: public-auth-boundary-mobile
+          route: /
+          viewport: mobile
+      selectors:
+        mustExist:
+            - '[data-testid=''dashboard-page'']'
+            - '[data-testid=''critical-action-button'']'
+            - '[data-testid=''demo-badge'']'
+        mustNotExist:
+            - '[data-testid=''login-page'']'
+            - '[data-testid=''github-login-button'']'
+            - '[data-testid=''protected-route'']'
+            - '[data-testid=''loading-state'']'
+        textMustExist:
+            - Run protected check
+            - Demo metrics loaded
+        textMustNotExist:
+            - Continue with GitHub
+            - Protected route bypass
+            - Loading dashboard data
+      severity: critical
+      steps:
+        - action: goto
+          description: Start from the public default demo route.
+          route: /
+        - action: assertVisible
+          description: Critical action remains visible.
+          selector: '[data-testid=''critical-action-button'']'
+        - action: click
+          description: Critical action remains interactable.
+          selector: '[data-testid=''critical-action-button'']'
+        - action: assertText
+          description: Interaction updated deterministic local state.
+          selector: '[data-testid=''protected-check-result'']'
+          text: Protected check passed
+      target: localPreview
+      waitFor:
+        - selector: '[data-testid=''dashboard-page'']'
+          state: visible
+          timeoutMs: 5000
+    - description: Scenario gallery must expose all seeded mutation routes for live demonstrations.
+      id: scenario-gallery-contract
+      runOn:
+        pullRequest: true
+        schedule: true
+      screenshots:
+        - fullPage: true
+          name: scenarios-desktop
+          route: /scenarios
+          viewport: desktop
+        - fullPage: true
+          name: scenario-gallery-contract-mobile
+          route: /scenarios
+          viewport: mobile
+      selectors:
+        mustExist:
+            - '[data-testid=''seeded-issue-hide-critical-button'']'
+            - '[data-testid=''seeded-issue-force-login-on-demo'']'
+            - '[data-testid=''seeded-issue-remove-demo-badge'']'
+            - '[data-testid=''seeded-issue-api-500'']'
+            - '[data-testid=''seeded-issue-empty-data'']'
+            - '[data-testid=''seeded-issue-mobile-overflow'']'
+            - '[data-testid=''seeded-issue-route-guard-bypass'']'
+            - '[data-testid=''seeded-issue-hidden-error-banner'']'
+            - '[data-testid=''seeded-issue-broken-image'']'
+            - '[data-testid=''seeded-issue-removed-accessible-name'']'
+            - '[data-testid=''seeded-issue-theme-token-drift'']'
+            - '[data-testid=''seeded-issue-stale-loading-state'']'
+        textMustExist:
+            - All built-in operators have visible targets
+            - api-500
+            - stale-loading-state
+      severity: high
+      target: localPreview
+      waitFor:
+        - selector: '[data-testid=''seeded-issue-api-500'']'
+          state: visible
+          timeoutMs: 5000
+    - description: API failure state must show a visible alert and remain useful for hidden-alert mutations.
+      id: api-error-state-contract
+      runOn:
+        pullRequest: true
+        schedule: true
+      screenshots:
+        - fullPage: true
+          name: api-error-desktop
+          route: /scenarios?issue=api-500
+          viewport: desktop
+        - fullPage: true
+          name: api-error-state-contract-mobile
+          route: /scenarios?issue=api-500
+          viewport: mobile
+      selectors:
+        mustExist:
+            - '[data-testid=''error-banner'']'
+            - '[data-testid=''dashboard-page'']'
+        mustNotExist:
+            - '[data-testid=''loading-state'']'
+        textMustExist:
+            - Error state visible
+            - Seeded API 500 state
+      severity: high
+      steps:
+        - action: goto
+          description: Seed API failure state.
+          route: /scenarios?issue=api-500
+        - action: assertVisible
+          description: Error banner is visible.
+          selector: '[data-testid=''error-banner'']'
+        - action: assertText
+          description: Alert copy is preserved.
+          selector: '[data-testid=''error-banner'']'
+          text: Error state visible
+      target: localPreview
+      waitFor:
+        - selector: '[data-testid=''error-banner'']'
+          state: visible
+          timeoutMs: 5000
+    - description: Empty data state should remain explicit rather than silently rendering partial cards.
+      id: data-empty-state-contract
+      runOn:
+        pullRequest: true
+        schedule: true
+      screenshots:
+        - fullPage: true
+          name: empty-data-desktop
+          route: /?issue=empty-data
+          viewport: desktop
+      selectors:
+        mustExist:
+            - '[data-testid=''empty-data-state'']'
+        textMustExist:
+            - No dashboard records
+            - Seeded empty data state
+      severity: medium
+      steps:
+        - action: goto
+          description: Seed the empty dashboard data state.
+          route: /?issue=empty-data
+        - action: assertVisible
+          description: Empty data state is visible.
+          selector: '[data-testid=''empty-data-state'']'
+      target: localPreview
+      waitFor:
+        - selector: '[data-testid=''empty-data-state'']'
+          state: visible
+          timeoutMs: 5000
+    - description: Mobile app shell should not expose intentional overflow probes or unstable layout.
+      id: mobile-layout-stability
+      runOn:
+        pullRequest: true
+        schedule: true
+      screenshots:
+        - fullPage: true
+          mask:
+            - '[data-testid=''dynamic-run-id'']'
+          name: app-shell-mobile-stable
+          route: /
+          viewport: mobile
+      selectors:
+        mustExist:
+            - '[data-testid=''dashboard-page'']'
+            - '[data-testid=''critical-action-button'']'
+        mustNotExist:
+            - '[data-testid=''mobile-overflow-probe'']'
+      severity: high
+      target: localPreview
+      waitFor:
+        - selector: '[data-testid=''dashboard-page'']'
+          state: visible
+          timeoutMs: 5000
+    - description: Preview image and artifact cards should render for visual-provider and screenshot handoff demos.
+      id: visual-asset-contract
+      runOn:
+        pullRequest: true
+        schedule: true
+      screenshots:
+        - fullPage: true
+          mask:
+            - '[data-testid=''dynamic-run-id'']'
+          name: visual-assets-desktop
+          route: /
+          viewport: desktop
+        - fullPage: true
+          mask:
+            - '[data-testid=''dynamic-run-id'']'
+          name: visual-asset-contract-mobile
+          route: /
+          viewport: mobile
+      selectors:
+        mustExist:
+            - '[data-testid=''dashboard-preview-image'']'
+            - '[data-testid=''artifact-card'']'
+        mustNotExist:
+            - '[data-testid=''broken-image-warning'']'
+        textMustExist:
+            - Healthy by default
+            - hive/hive-export.json
+      severity: medium
+      target: localPreview
+      waitFor:
+        - selector: '[data-testid=''dashboard-preview-image'']'
+          state: visible
+          timeoutMs: 5000
+    - description: Command matrix should document fast, governance, provider, and Hive demo commands.
+      id: command-matrix-readiness
+      runOn:
+        pullRequest: true
+        schedule: true
+      screenshots:
+        - fullPage: true
+          name: command-matrix-desktop
+          route: /commands
+          viewport: desktop
+      selectors:
+        mustExist:
+            - '[data-testid=''command-matrix'']'
+            - '[data-testid=''command-row-doctor'']'
+            - '[data-testid=''command-row-mutate'']'
+            - '[data-testid=''command-row-hive'']'
+        textMustExist:
+            - npm run vh:mutate
+            - npm run vh:hive-export
+      severity: medium
+      target: localPreview
+      waitFor:
+        - selector: '[data-testid=''command-matrix'']'
+          state: visible
+          timeoutMs: 5000
+    - description: Integration page should explain dry-run Hive, provider, GitHub, and commandGroup lanes.
+      id: hive-integration-lane
+      runOn:
+        pullRequest: true
+        schedule: true
+      screenshots:
+        - fullPage: true
+          name: integrations-desktop
+          route: /integrations
+          viewport: desktop
+      selectors:
+        mustExist:
+            - '[data-testid=''hive-integration-lane'']'
+            - '[data-testid=''provider-readiness'']'
+            - '[data-testid=''github-workflow-list'']'
+            - '[data-testid=''mock-api-health'']'
+        textMustExist:
+            - Dry-run handoff before trusted repair
+            - No provider or Hive API calls by default
+      severity: medium
+      target: localPreview
+      waitFor:
+        - selector: '[data-testid=''hive-integration-lane'']'
+          state: visible
+          timeoutMs: 5000
+    - description: Guarded repair page should state that Hive can propose work while Visual Hive owns final validation.
+      id: guarded-repair-policy
+      runOn:
+        pullRequest: true
+        schedule: true
+      screenshots:
+        - fullPage: true
+          name: guarded-repair-desktop
+          route: /guarded
+          viewport: desktop
+        - fullPage: true
+          name: guarded-repair-policy-mobile
+          route: /guarded
+          viewport: mobile
+      selectors:
+        mustExist:
+            - '[data-testid=''guarded-repair-policy'']'
+        textMustExist:
+            - Visual Hive deterministic verdict engine
+            - Human review
+            - Rerun Visual Hive
+      severity: high
+      target: localPreview
+      waitFor:
+        - selector: '[data-testid=''guarded-repair-policy'']'
+          state: visible
+          timeoutMs: 5000
+    - description: CommandGroup target should start the web app and mock API service for lifecycle evidence.
+      id: fullstack-command-group-health
+      runOn:
+        pullRequest: false
+        schedule: true
+      screenshots:
+        - fullPage: true
+          name: command-group-integrations
+          route: /integrations
+          viewport: desktop
+      selectors:
+        mustExist:
+            - '[data-testid=''mock-api-health'']'
+        textMustExist:
+            - Mock API service target
+      severity: medium
+      target: fullStackPreview
+      waitFor:
+        - selector: '[data-testid=''mock-api-health'']'
+          state: visible
+          timeoutMs: 5000
+    - description: Storybook target should render fixture components for component-level visual review.
+      id: component-lab-storybook
+      runOn:
+        pullRequest: false
+        schedule: true
+      screenshots:
+        - fullPage: true
+          name: storybook-scenario-card
+          route: /iframe.html?id=visual-hive-test-lab-fixtures--scenario-mutation-card&viewMode=story
+          viewport: desktop
+      selectors:
+        mustExist:
+            - '[data-testid=''seeded-issue-api-500'']'
+        textMustExist:
+            - API outage
+            - api-500
+      severity: medium
+      target: componentLibrary
+      waitFor:
+        - selector: '[data-testid=''seeded-issue-api-500'']'
+          state: visible
+          timeoutMs: 10000
+    - description: Deploy-preview target documents how hosted preview URLs are represented.
+      id: deploy-preview-smoke
+      runOn:
+        pullRequest: false
+        schedule: true
+      screenshots:
+        - fullPage: true
+          name: deploy-preview-home
+          route: /visual-hive-demo-site/
+          viewport: desktop
+      selectors:
+        mustExist:
+            - body
+      severity: low
+      target: deployPreview
+    - description: Hosted reference target is available for manual URL-target demos, not default local PR runs.
+      id: hosted-reference-smoke
+      runOn:
+        pullRequest: false
+        schedule: false
+      selectors:
+        mustExist:
+            - body
+      severity: low
+      target: hostedReference
+    - description: Protected scheduled target illustrates unsafe target filtering and missing-secret reporting.
+      id: live-cluster-protected-lane
+      runOn:
+        pullRequest: false
+        schedule: true
+      selectors:
+        mustExist:
+            - body
+      severity: high
+      target: unsafeHosted
 costPolicy:
-  maxExternalScreenshotsPerRun: 0
-  maxMonthlyExternalScreenshots: 5000
-  externalUpload:
-    pullRequest: false
-    schedule: true
-    manual: true
-    canary: false
-    mutation: false
-    full: true
-    onFailureOnly: true
-    criticalContractsOnly: true
-
+    externalUpload:
+        canary: false
+        criticalContractsOnly: true
+        full: true
+        manual: true
+        mutation: false
+        onFailureOnly: true
+        pullRequest: false
+        schedule: true
+    maxExternalScreenshotsPerRun: 0
+    maxMonthlyExternalScreenshots: 5000
 github:
-  enabled: true
-  issueLabels:
-    - visual-hive
-    - test-failure
-    - live-demo
-  commentMarker: "<!-- visual-hive-report -->"
+    commentMarker: <!-- visual-hive-report -->
+    enabled: true
+    issueLabels:
+        - visual-hive
+        - test-failure
+        - live-demo
+integrations:
+    hive:
+        acmmLevel: 5
+        beadApi:
+            agent: quality
+            tokenEnv: HIVE_DASHBOARD_TOKEN
+        defaultActor: quality
+        enabled: true
+        export:
+            beads: true
+            knowledgeFacts: true
+            knowledgeGraph: true
+            maxFacts: 80
+            repairWorkOrders: true
+            wikiVault: true
+        labels:
+            - visual-hive
+            - hive/quality
+            - ai-ready
+            - live-demo
+        mode: dry_run
+        repair:
+            branchPrefix: hive/visual-hive-
+            enabled: true
+            maxAttempts: 1
+            prOnly: true
+            requireHumanReview: true
+            rerunVisualHive: true
+mutation:
+    enabled: true
+    minScore: 0.7
+    operators:
+        - contracts:
+            - public-auth-boundary
+          id: hide-critical-button
+        - contracts:
+            - public-auth-boundary
+          id: force-login-on-demo
+        - contracts:
+            - app-shell-stability
+            - public-auth-boundary
+          id: remove-demo-badge
+        - contracts:
+            - public-auth-boundary
+            - app-shell-stability
+          id: api-500
+        - contracts:
+            - data-empty-state-contract
+            - visual-asset-contract
+          id: empty-data
+        - contracts:
+            - mobile-layout-stability
+          id: mobile-overflow
+        - contracts:
+            - public-auth-boundary
+          id: route-guard-bypass
+        - contracts:
+            - api-error-state-contract
+          id: hidden-error-banner
+        - contracts:
+            - visual-asset-contract
+          id: broken-image
+        - contracts:
+            - public-auth-boundary
+          id: removed-accessible-name
+        - contracts:
+            - app-shell-stability
+            - mobile-layout-stability
+          id: theme-token-drift
+        - contracts:
+            - public-auth-boundary
+            - mobile-layout-stability
+          id: stale-loading-state
+    runOn:
+        pullRequest: false
+        schedule: true
+project:
+    defaultBranch: main
+    name: visual-hive-demo-site
+    setupProfile: complex-app
+    type: react-vite
+providers:
+    applitools:
+        enabled: false
+        mode: external
+        requiredEnv:
+            - APPLITOOLS_API_KEY
+    argos:
+        enabled: false
+        mode: external
+        requiredEnv:
+            - ARGOS_TOKEN
+        upload:
+            buildName: visual-hive-demo
+            extraFiles:
+                - .visual-hive/report.json
+                - .visual-hive/evidence-packet.json
+                - .visual-hive/verdict.json
+                - .visual-hive/hive/hive-export.json
+            includeActualScreenshots: true
+            includeDiffScreenshots: true
+            includeTextArtifacts: true
+    chromatic:
+        enabled: false
+        mode: external
+        requiredEnv:
+            - CHROMATIC_PROJECT_TOKEN
+    github-checks:
+        enabled: false
+        mode: external
+        requiredEnv:
+            - GITHUB_TOKEN
+    percy:
+        enabled: false
+        mode: external
+        requiredEnv:
+            - PERCY_TOKEN
+    playwright:
+        enabled: true
+        mode: external
+        requiredEnv: []
+    storybook:
+        enabled: true
+        mode: mock
+        requiredEnv: []
+selection:
+    changedFiles:
+        - contracts:
+            - app-shell-stability
+            - public-auth-boundary
+            - scenario-gallery-contract
+            - command-matrix-readiness
+            - hive-integration-lane
+            - guarded-repair-policy
+          pattern: src/App.tsx
+          risk: high
+        - contracts:
+            - app-shell-stability
+            - mobile-layout-stability
+            - visual-asset-contract
+          pattern: src/styles.css
+          risk: high
+        - contracts:
+            - component-lab-storybook
+          pattern: src/**/*.stories.tsx
+          risk: medium
+        - contracts:
+            - fullstack-command-group-health
+          pattern: scripts/mock-api.mjs
+          risk: medium
+        - contracts:
+            - hive-integration-lane
+            - command-matrix-readiness
+          pattern: .github/workflows/**
+          risk: medium
+        - contracts:
+            - app-shell-stability
+            - command-matrix-readiness
+            - hive-integration-lane
+          pattern: visual-hive.config.yaml
+          risk: high
+        - contracts:
+            - visual-asset-contract
+            - data-empty-state-contract
+          pattern: public/**
+          risk: medium
+    ignoreChangedFiles:
+        - pattern: README.md
+          reason: docs-only change is useful for plan filtering demos
+        - pattern: docs/**
+          reason: docs-only change is useful for plan filtering demos
+targets:
+    componentLibrary:
+        build: npm run build-storybook
+        components:
+            - src/App.tsx
+        cost: medium
+        kind: storybook
+        prSafe: true
+        schedule: 0 */6 * * *
+        serve: npm run storybook
+        stories:
+            - src/App.stories.tsx
+        url: http://127.0.0.1:6006
+    deployPreview:
+        cost: cheap
+        fallbackUrl: https://daviddiaz0317.github.io/visual-hive-demo-site/
+        kind: deployPreview
+        prSafe: true
+        provider: github-pages
+        schedule: 0 */12 * * *
+        urlEnv: VISUAL_HIVE_DEMO_PREVIEW_URL
+    fullStackPreview:
+        cost: medium
+        kind: commandGroup
+        prSafe: true
+        schedule: 0 * * * *
+        services:
+            - command: npm run mock-api -- --port 4274
+              healthPath: /health
+              name: mock-api
+              readinessTimeoutMs: 10000
+              url: http://127.0.0.1:4274
+            - command: npm run preview -- --port 4174 --strictPort
+              name: web
+              readinessTimeoutMs: 15000
+              url: http://127.0.0.1:4174
+        setup:
+            - npm run build
+        url: http://127.0.0.1:4174
+    hostedReference:
+        cost: cheap
+        kind: url
+        prSafe: false
+        schedule: 0 6 * * *
+        url: https://daviddiaz0317.github.io/visual-hive-demo-site/
+    localPreview:
+        build: npm run build
+        cost: cheap
+        install: npm ci
+        kind: command
+        prSafe: true
+        schedule: '*/15 * * * *'
+        serve: npm run preview -- --port 4173 --strictPort
+        url: http://127.0.0.1:4173
+    unsafeHosted:
+        cost: expensive
+        kind: protected
+        prSafe: false
+        requiresSecrets:
+            - DEMO_PROTECTED_TOKEN
+        schedule: 0 */4 * * *
+        url: https://example.com
+viewports:
+    desktop:
+        height: 900
+        width: 1440
+    mobile:
+        height: 844
+        width: 390
+    tablet:
+        height: 1024
+        width: 768
+visual:
+    artifactDir: .visual-hive/artifacts
+    baselinePlatform: platform
+    failOnMissingBaselineInCI: true
+    maxDiffPixelRatio: 0.01
+    snapshotDir: .visual-hive/snapshots
+    updateSnapshots: false
