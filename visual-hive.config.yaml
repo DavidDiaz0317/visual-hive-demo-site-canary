@@ -248,6 +248,17 @@ contracts:
         mustNotExist:
             - '[data-testid=''mobile-overflow-probe'']'
       severity: high
+      steps:
+        - action: goto
+          description: Navigate to the mobile app shell.
+          route: /
+          state: visible
+          timeoutMs: 15000
+        - action: assertVisible
+          description: Dashboard page is visible on the mobile layout.
+          selector: '[data-testid=''dashboard-page'']'
+          state: visible
+          timeoutMs: 15000
       target: localPreview
       waitFor:
         - selector: '[data-testid=''dashboard-page'']'
