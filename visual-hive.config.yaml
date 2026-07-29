@@ -440,6 +440,17 @@ contracts:
         mustExist:
             - body
       severity: high
+      steps:
+        - action: goto
+          description: Navigate to the protected hosted root.
+          route: /
+          state: visible
+          timeoutMs: 15000
+        - action: assertVisible
+          description: Protected hosted document body is visible.
+          selector: body
+          state: visible
+          timeoutMs: 15000
       target: unsafeHosted
 costPolicy:
     externalUpload:
