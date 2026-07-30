@@ -200,6 +200,17 @@ contracts:
       - selector: "[data-testid='seeded-issue-api-500']"
         state: visible
         timeoutMs: 5000
+    steps:
+      - action: goto
+        route: "/scenarios"
+        description: "Open the deterministic scenario gallery."
+      - action: assertVisible
+        selector: "[data-testid='seeded-issue-api-500']"
+        description: "The seeded API failure scenario is visible."
+      - action: assertText
+        selector: "[data-testid='seeded-issue-api-500']"
+        text: "API outage"
+        description: "The scenario gallery retains the seeded API outage label."
     selectors:
       mustExist:
         - "[data-testid='seeded-issue-hide-critical-button']"
@@ -298,6 +309,10 @@ contracts:
         route: "/?issue=empty-data"
         viewport: desktop
         fullPage: true
+      - name: data-empty-state-contract-mobile
+        route: "/?issue=empty-data"
+        viewport: mobile
+        fullPage: true
 
   - id: mobile-layout-stability
     description: Mobile app shell should not expose intentional overflow probes or unstable layout.
@@ -310,6 +325,13 @@ contracts:
       - selector: "[data-testid='dashboard-page']"
         state: visible
         timeoutMs: 5000
+    steps:
+      - action: goto
+        route: "/"
+        description: "Open the responsive dashboard shell."
+      - action: assertVisible
+        selector: "[data-testid='dashboard-page']"
+        description: "The dashboard shell remains visible at the mobile viewport."
     selectors:
       mustExist:
         - "[data-testid='dashboard-page']"
@@ -335,6 +357,13 @@ contracts:
       - selector: "[data-testid='dashboard-preview-image']"
         state: visible
         timeoutMs: 5000
+    steps:
+      - action: goto
+        route: "/"
+        description: "Open the dashboard visual asset state."
+      - action: assertVisible
+        selector: "[data-testid='dashboard-preview-image']"
+        description: "The dashboard preview image is visible."
     selectors:
       mustExist:
         - "[data-testid='dashboard-preview-image']"
@@ -369,6 +398,17 @@ contracts:
       - selector: "[data-testid='command-matrix']"
         state: visible
         timeoutMs: 5000
+    steps:
+      - action: goto
+        route: "/commands"
+        description: "Open the Visual Hive command matrix."
+      - action: assertVisible
+        selector: "[data-testid='command-matrix']"
+        description: "The command matrix is visible."
+      - action: assertText
+        selector: "[data-testid='command-matrix']"
+        text: "npm run vh:mutate"
+        description: "The command matrix retains the mutation command."
     selectors:
       mustExist:
         - "[data-testid='command-matrix']"
@@ -383,6 +423,10 @@ contracts:
         route: "/commands"
         viewport: desktop
         fullPage: true
+      - name: command-matrix-readiness-mobile
+        route: "/commands"
+        viewport: mobile
+        fullPage: true
 
   - id: hive-integration-lane
     description: Integration page should explain dry-run Hive, provider, GitHub, and commandGroup lanes.
@@ -395,6 +439,17 @@ contracts:
       - selector: "[data-testid='hive-integration-lane']"
         state: visible
         timeoutMs: 5000
+    steps:
+      - action: goto
+        route: "/integrations"
+        description: "Open the Hive integration status page."
+      - action: assertVisible
+        selector: "[data-testid='hive-integration-lane']"
+        description: "The Hive integration lane is visible."
+      - action: assertText
+        selector: "[data-testid='hive-integration-lane']"
+        text: "Dry-run handoff before trusted repair"
+        description: "The integration lane preserves its guarded handoff copy."
     selectors:
       mustExist:
         - "[data-testid='hive-integration-lane']"
@@ -409,6 +464,10 @@ contracts:
         route: "/integrations"
         viewport: desktop
         fullPage: true
+      - name: hive-integration-lane-mobile
+        route: "/integrations"
+        viewport: mobile
+        fullPage: true
 
   - id: guarded-repair-policy
     description: Guarded repair page should state that Hive can propose work while Visual Hive owns final validation.
@@ -421,6 +480,17 @@ contracts:
       - selector: "[data-testid='guarded-repair-policy']"
         state: visible
         timeoutMs: 5000
+    steps:
+      - action: goto
+        route: "/guarded"
+        description: "Open the guarded repair policy page."
+      - action: assertVisible
+        selector: "[data-testid='guarded-repair-policy']"
+        description: "The guarded repair policy is visible."
+      - action: assertText
+        selector: "[data-testid='guarded-repair-policy']"
+        text: "Human review"
+        description: "Human review remains explicit in the repair policy."
     selectors:
       mustExist:
         - "[data-testid='guarded-repair-policy']"
@@ -449,6 +519,17 @@ contracts:
       - selector: "[data-testid='mock-api-health']"
         state: visible
         timeoutMs: 5000
+    steps:
+      - action: goto
+        route: "/integrations"
+        description: "Open the full-stack integration health page."
+      - action: assertVisible
+        selector: "[data-testid='mock-api-health']"
+        description: "The mock API health indicator is visible."
+      - action: assertText
+        selector: "[data-testid='mock-api-health']"
+        text: "Mock API service target"
+        description: "The full-stack service target is identified."
     selectors:
       mustExist:
         - "[data-testid='mock-api-health']"
@@ -458,6 +539,10 @@ contracts:
       - name: command-group-integrations
         route: "/integrations"
         viewport: desktop
+        fullPage: true
+      - name: fullstack-command-group-health-mobile
+        route: "/integrations"
+        viewport: mobile
         fullPage: true
 
   - id: component-lab-storybook
@@ -471,6 +556,17 @@ contracts:
       - selector: "[data-testid='seeded-issue-api-500']"
         state: visible
         timeoutMs: 10000
+    steps:
+      - action: goto
+        route: "/iframe.html?id=visual-hive-test-lab-fixtures--scenario-mutation-card&viewMode=story"
+        description: "Open the deterministic Storybook scenario card."
+      - action: assertVisible
+        selector: "[data-testid='seeded-issue-api-500']"
+        description: "The Storybook API outage scenario is visible."
+      - action: assertText
+        selector: "[data-testid='seeded-issue-api-500']"
+        text: "API outage"
+        description: "The Storybook scenario retains its user-visible outage label."
     selectors:
       mustExist:
         - "[data-testid='seeded-issue-api-500']"
@@ -482,6 +578,10 @@ contracts:
         route: "/iframe.html?id=visual-hive-test-lab-fixtures--scenario-mutation-card&viewMode=story"
         viewport: desktop
         fullPage: true
+      - name: component-lab-storybook-mobile
+        route: "/iframe.html?id=visual-hive-test-lab-fixtures--scenario-mutation-card&viewMode=story"
+        viewport: mobile
+        fullPage: true
 
   - id: deploy-preview-smoke
     description: Deploy-preview target documents how hosted preview URLs are represented.
@@ -490,25 +590,43 @@ contracts:
     runOn:
       pullRequest: false
       schedule: true
+    steps:
+      - action: goto
+        route: "/visual-hive-demo-site/"
+        description: "Open the deployed demo preview."
+      - action: assertVisible
+        selector: "[data-testid='dashboard-page']"
+        description: "The deployed dashboard surface is visible."
     selectors:
       mustExist:
-        - "body"
+        - "[data-testid='dashboard-page']"
     screenshots:
       - name: deploy-preview-home
         route: "/visual-hive-demo-site/"
         viewport: desktop
         fullPage: true
+      - name: deploy-preview-smoke-mobile
+        route: "/visual-hive-demo-site/"
+        viewport: mobile
+        fullPage: true
 
   - id: hosted-reference-smoke
-    description: Hosted reference target is available for manual URL-target demos, not default local PR runs.
+    description: Hosted reference target is available for trusted scheduled/manual URL-target demos, not default local PR runs.
     target: hostedReference
     severity: low
     runOn:
       pullRequest: false
-      schedule: false
+      schedule: true
+    steps:
+      - action: goto
+        route: "/visual-hive-demo-site/"
+        description: "Open the hosted reference dashboard."
+      - action: assertVisible
+        selector: "[data-testid='dashboard-page']"
+        description: "The hosted reference dashboard is visible."
     selectors:
       mustExist:
-        - "body"
+        - "[data-testid='dashboard-page']"
 
   - id: live-cluster-protected-lane
     description: Protected scheduled target illustrates unsafe target filtering and missing-secret reporting.
@@ -517,9 +635,24 @@ contracts:
     runOn:
       pullRequest: false
       schedule: true
+    steps:
+      - action: goto
+        route: "/"
+        description: "Navigate to the protected hosted target."
+        state: visible
+        timeoutMs: 15000
+      - action: assertVisible
+        selector: h1
+        description: "The protected hosted target renders its primary heading."
+        state: visible
+        timeoutMs: 15000
+      - action: assertText
+        selector: h1
+        text: "Example Domain"
+        description: "The protected target retains its stable visible identity."
     selectors:
       mustExist:
-        - "body"
+        - "h1"
 
 viewports:
   desktop:
@@ -575,6 +708,7 @@ selection:
         - app-shell-stability
         - command-matrix-readiness
         - hive-integration-lane
+        - hosted-reference-smoke
       risk: high
     - pattern: "public/**"
       contracts:
