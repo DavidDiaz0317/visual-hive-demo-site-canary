@@ -785,7 +785,7 @@ function GuardedRepair() {
             <p>Not executed by Visual Hive</p>
           </div>
           <div>
-            <strong>Human review</strong>
+            <strong>Operator review</strong>
             <p>Required before merge</p>
           </div>
           <div>
