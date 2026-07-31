@@ -517,6 +517,8 @@ contracts:
           route: /visual-hive-demo-site/
           viewport: desktop
         - fullPage: true
+          mask:
+            - '[data-testid=''dynamic-run-id'']'
           name: deploy-preview-smoke-mobile
           route: /visual-hive-demo-site/
           viewport: mobile
