@@ -1,5 +1,5 @@
 {
-  "acmm_level": 4,
+  "acmm_level": 5,
   "allowed_auto_merge_paths": [
     "**/*.spec.*",
     "**/*.test.*",
@@ -28,7 +28,7 @@
     "**/*.spec.*",
     "**/*_test.go"
   ],
-  "automation": "issues",
+  "automation": "repair-pr",
   "coverage": "comprehensive",
   "default_branch": "main",
   "distribution_manifest_sha256": "",
