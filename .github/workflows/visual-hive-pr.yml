@@ -3007,7 +3007,7 @@ jobs:
           done < .visual-hive/changed-files.pr.txt
           env -u GITHUB_TOKEN -u GH_TOKEN -u GITHUB_OUTPUT -u GITHUB_ENV -u GITHUB_PATH -u GITHUB_STEP_SUMMARY -u ACTIONS_ID_TOKEN_REQUEST_TOKEN -u ACTIONS_ID_TOKEN_REQUEST_URL -u NODE_OPTIONS -u BASH_ENV -u ENV \
             GITHUB_SHA="$HIVE_HEAD_SHA" GITHUB_REF="refs/heads/$HIVE_HEAD_REF" GITHUB_EVENT_NAME=pull_request VISUAL_HIVE_SOURCE_CONCLUSION=success VISUAL_HIVE_WORKFLOW_ARTIFACT_ID="$VISUAL_HIVE_WORKFLOW_ARTIFACT_ID" \
-            node "$VISUAL_HIVE_CLI" hive bundle --config visual-hive.config.yaml --issues .visual-hive/proof/pr/issues.present.json --acmm-request 4 --scan-scope changed-files "${contract_args[@]}" "${file_args[@]}"
+            node "$VISUAL_HIVE_CLI" hive bundle --config visual-hive.config.yaml --issues .visual-hive/proof/pr/issues.present.json --acmm-request 5 --scan-scope changed-files "${contract_args[@]}" "${file_args[@]}"
       - name: Upload pull request bundle
         if: ${{ github.event_name == 'pull_request' && needs.setup-authorization.outputs.operation == '' && steps.pr_source.outputs.admissible == 'true' }}
         id: pr_bundle
