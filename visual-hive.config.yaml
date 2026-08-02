@@ -177,9 +177,9 @@ contracts:
         pullRequest: true
         schedule: true
       screenshots:
-        - fullPage: true
-          name: api-error-desktop
+        - name: api-error-desktop
           route: /scenarios?issue=api-500
+          selector: '[data-testid=''error-banner'']'
           viewport: desktop
         - name: api-error-state-contract-mobile
           route: /scenarios?issue=api-500
