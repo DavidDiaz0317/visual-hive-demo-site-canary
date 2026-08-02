@@ -786,7 +786,7 @@ function GuardedRepair() {
           </div>
           <div>
             <strong>Operator review</strong>
-            <p>Required before merge</p>
+            <p>Human review required before merge</p>
           </div>
           <div>
             <strong>Final validation</strong>
