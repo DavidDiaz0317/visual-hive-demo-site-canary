@@ -278,7 +278,7 @@ contracts:
       - name: api-error-state-contract-mobile
         route: "/scenarios?issue=api-500"
         viewport: mobile
-        fullPage: true
+        selector: "[data-testid='error-banner']"
 
   - id: data-empty-state-contract
     description: Empty data state should remain explicit rather than silently rendering partial cards.
