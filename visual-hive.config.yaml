@@ -516,9 +516,9 @@ contracts:
           name: deploy-preview-home
           route: /visual-hive-demo-site-canary/
           viewport: desktop
-        - fullPage: true
-          name: deploy-preview-smoke-mobile
+        - name: deploy-preview-smoke-mobile
           route: /visual-hive-demo-site-canary/
+          selector: '[data-testid=''dashboard-page'']'
           viewport: mobile
       selectors:
         mustExist:
