@@ -8,7 +8,11 @@ const snapshot = JSON.parse(await readFile(path.join(repoRoot, ".visual-hive", "
 const text = JSON.stringify(snapshot);
 
 const projectName = snapshot.project?.name ?? snapshot.project ?? snapshot.config?.project?.name;
-assert(projectName === "visual-hive-demo-site", "Snapshot must describe visual-hive-demo-site.");
+const expectedProjectName =
+  process.env.VISUAL_HIVE_EXPECTED_PROJECT?.trim() ||
+  process.env.GITHUB_REPOSITORY?.split("/").at(-1)?.trim() ||
+  "visual-hive-demo-site";
+assert(projectName === expectedProjectName, `Snapshot must describe ${expectedProjectName}, got ${projectName ?? "missing"}.`);
 assert(snapshot.overview?.deterministicStatus, "Snapshot must include deterministic status.");
 assert(text.includes("report.json"), "Snapshot must include report artifact evidence.");
 assert(text.includes("mutation-report.json"), "Snapshot must include mutation report evidence.");

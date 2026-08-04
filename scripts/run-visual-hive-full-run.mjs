@@ -641,9 +641,10 @@ async function verifyFinalMetrics() {
 
 async function writeSummary(finalResult) {
   await mkdir(hiveDir, { recursive: true });
+  const project = await resolveProjectName();
   const summary = {
     schemaVersion: "visual-hive.external-full-run-summary.v1",
-    project: "visual-hive-demo-site",
+    project,
     generatedAt: new Date().toISOString(),
     visualHiveCliPath: cliResolution.displayPath,
     visualHiveCliSource: cliResolution.source,
@@ -676,6 +677,20 @@ async function writeSummary(finalResult) {
   await writeFile(summaryMarkdownPath, renderSummaryMarkdown(summary), "utf8");
   console.log(`Summary JSON: ${path.relative(repoRoot, summaryJsonPath).replaceAll("\\", "/")}`);
   console.log(`Summary Markdown: ${path.relative(repoRoot, summaryMarkdownPath).replaceAll("\\", "/")}`);
+}
+
+async function resolveProjectName() {
+  if (existsSync(path.join(hiveDir, "report.json"))) {
+    const report = await readJson("report.json");
+    if (typeof report.project === "string" && report.project.trim()) {
+      return report.project.trim();
+    }
+  }
+  return (
+    process.env.VISUAL_HIVE_EXPECTED_PROJECT?.trim() ||
+    process.env.GITHUB_REPOSITORY?.split("/").at(-1)?.trim() ||
+    "visual-hive-demo-site"
+  );
 }
 
 function renderSummaryMarkdown(summary) {
