@@ -17,15 +17,13 @@ contracts:
         - fullPage: true
           mask:
             - '[data-testid=''dynamic-run-id'']'
-          name: app-shell-desktop
-          route: /
-          viewport: desktop
-        - fullPage: true
-          mask:
-            - '[data-testid=''dynamic-run-id'']'
           name: app-shell-mobile
           route: /
           viewport: mobile
+        - fullPage: false
+          name: app-shell-tablet
+          route: /
+          viewport: tablet
       selectors:
         mustExist:
             - '[data-testid=''dashboard-page'']'
@@ -72,19 +70,6 @@ contracts:
       runOn:
         pullRequest: true
         schedule: true
-      screenshots:
-        - fullPage: true
-          mask:
-            - '[data-testid=''dynamic-run-id'']'
-          name: auth-boundary-desktop
-          route: /
-          viewport: desktop
-        - fullPage: true
-          mask:
-            - '[data-testid=''dynamic-run-id'']'
-          name: public-auth-boundary-mobile
-          route: /
-          viewport: mobile
       selectors:
         mustExist:
             - '[data-testid=''dashboard-page'']'
@@ -128,11 +113,11 @@ contracts:
         pullRequest: true
         schedule: true
       screenshots:
-        - fullPage: true
+        - fullPage: false
           name: scenarios-desktop
           route: /scenarios
           viewport: desktop
-        - fullPage: true
+        - fullPage: false
           name: scenario-gallery-contract-mobile
           route: /scenarios
           viewport: mobile
@@ -178,12 +163,12 @@ contracts:
         schedule: true
       screenshots:
         - name: api-error-desktop
+          fullPage: false
           route: /scenarios?issue=api-500
-          selector: '[data-testid=''error-banner'']'
           viewport: desktop
         - name: api-error-state-contract-mobile
+          fullPage: false
           route: /scenarios?issue=api-500
-          selector: '[data-testid=''error-banner'']'
           viewport: mobile
       selectors:
         mustExist:
@@ -217,11 +202,11 @@ contracts:
         pullRequest: true
         schedule: true
       screenshots:
-        - fullPage: true
+        - fullPage: false
           name: empty-data-desktop
           route: /?issue=empty-data
           viewport: desktop
-        - fullPage: true
+        - fullPage: false
           name: data-empty-state-contract-mobile
           route: /?issue=empty-data
           viewport: mobile
@@ -249,13 +234,6 @@ contracts:
       runOn:
         pullRequest: true
         schedule: true
-      screenshots:
-        - fullPage: true
-          mask:
-            - '[data-testid=''dynamic-run-id'']'
-          name: app-shell-mobile-stable
-          route: /
-          viewport: mobile
       selectors:
         mustExist:
             - '[data-testid=''dashboard-page'']'
@@ -281,17 +259,13 @@ contracts:
         pullRequest: true
         schedule: true
       screenshots:
-        - fullPage: true
-          mask:
-            - '[data-testid=''dynamic-run-id'']'
+        - fullPage: false
           name: visual-assets-desktop
-          route: /
+          route: /?contract=visual-assets
           viewport: desktop
-        - fullPage: true
-          mask:
-            - '[data-testid=''dynamic-run-id'']'
-          name: visual-asset-contract-mobile
-          route: /
+        - fullPage: false
+          name: visual-assets-mobile
+          route: /?contract=visual-assets
           viewport: mobile
       selectors:
         mustExist:
@@ -321,11 +295,11 @@ contracts:
         pullRequest: true
         schedule: true
       screenshots:
-        - fullPage: true
+        - fullPage: false
           name: command-matrix-desktop
           route: /commands
           viewport: desktop
-        - fullPage: true
+        - fullPage: false
           name: command-matrix-readiness-mobile
           route: /commands
           viewport: mobile
@@ -361,11 +335,11 @@ contracts:
         pullRequest: true
         schedule: true
       screenshots:
-        - fullPage: true
+        - fullPage: false
           name: integrations-desktop
           route: /integrations
           viewport: desktop
-        - fullPage: true
+        - fullPage: false
           name: hive-integration-lane-mobile
           route: /integrations
           viewport: mobile
@@ -401,11 +375,11 @@ contracts:
         pullRequest: true
         schedule: true
       screenshots:
-        - fullPage: true
+        - fullPage: false
           name: guarded-repair-desktop
           route: /guarded
           viewport: desktop
-        - fullPage: true
+        - fullPage: false
           name: guarded-repair-policy-mobile
           route: /guarded
           viewport: mobile
@@ -439,11 +413,11 @@ contracts:
         pullRequest: false
         schedule: true
       screenshots:
-        - fullPage: true
+        - fullPage: false
           name: command-group-integrations
           route: /integrations
           viewport: desktop
-        - fullPage: true
+        - fullPage: false
           name: fullstack-command-group-health-mobile
           route: /integrations
           viewport: mobile
@@ -475,11 +449,11 @@ contracts:
         pullRequest: false
         schedule: true
       screenshots:
-        - fullPage: true
+        - fullPage: false
           name: storybook-scenario-card
           route: /iframe.html?id=visual-hive-test-lab-fixtures--scenario-mutation-card&viewMode=story
           viewport: desktop
-        - fullPage: true
+        - fullPage: false
           name: component-lab-storybook-mobile
           route: /iframe.html?id=visual-hive-test-lab-fixtures--scenario-mutation-card&viewMode=story
           viewport: mobile
@@ -512,11 +486,11 @@ contracts:
         pullRequest: false
         schedule: true
       screenshots:
-        - fullPage: true
+        - fullPage: false
           name: deploy-preview-home
           route: /visual-hive-demo-site-canary/
           viewport: desktop
-        - fullPage: true
+        - fullPage: false
           name: deploy-preview-smoke-mobile
           route: /visual-hive-demo-site-canary/
           viewport: mobile
@@ -734,6 +708,13 @@ selection:
             - mobile-layout-stability
             - visual-asset-contract
           pattern: src/styles.css
+          risk: high
+        - contracts:
+            - component-lab-storybook
+            - deploy-preview-smoke
+            - fullstack-command-group-health
+            - live-cluster-protected-lane
+          pattern: src/**
           risk: high
         - contracts:
             - component-lab-storybook

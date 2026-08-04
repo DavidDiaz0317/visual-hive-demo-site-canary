@@ -376,7 +376,7 @@ async function verifyCoverage() {
   assert(coverage.outputResource || coverage.schemaVersion, "coverage.json must be structured.");
   assert(Array.isArray(recommendations.maintenanceFindings), "coverage-recommendations.json must include maintenanceFindings.");
   assert(
-    recommendations.maintenanceFindings.length > 0 || recommendations.summary?.recommendations === 0,
+    recommendations.maintenanceFindings.length > 0 || recommendations.summary?.total === 0,
     "coverage recommendations must include findings or explicitly explain no recommendations."
   );
   assert(!JSON.stringify(recommendations).includes("approved_by_visual_hive"), "Visual Hive must not automatically approve baselines.");
