@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { spawnSync } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -11,6 +12,7 @@ const projectName = snapshot.project?.name ?? snapshot.project ?? snapshot.confi
 const expectedProjectName =
   process.env.VISUAL_HIVE_EXPECTED_PROJECT?.trim() ||
   process.env.GITHUB_REPOSITORY?.split("/").at(-1)?.trim() ||
+  projectNameFromOrigin() ||
   "visual-hive-demo-site";
 assert(projectName === expectedProjectName, `Snapshot must describe ${expectedProjectName}, got ${projectName ?? "missing"}.`);
 assert(snapshot.overview?.deterministicStatus, "Snapshot must include deterministic status.");
@@ -28,6 +30,17 @@ assert(text.includes("artifacts-index.json"), "Snapshot must include artifact in
 assert(/does not repair code|create branches|open pull requests/i.test(text), "Snapshot must include safety boundary copy.");
 
 console.log("Visual Hive Control Plane snapshot smoke passed.");
+
+function projectNameFromOrigin() {
+  const result = spawnSync("git", ["config", "--get", "remote.origin.url"], {
+    cwd: repoRoot,
+    encoding: "utf8",
+    windowsHide: true
+  });
+  if (result.status !== 0) return undefined;
+  const remote = result.stdout.trim().replace(/\.git$/i, "");
+  return remote.split(/[/:]/).at(-1)?.trim() || undefined;
+}
 
 function assert(condition, message) {
   if (!condition) {
