@@ -1,5 +1,5 @@
 project:
-  name: visual-hive-demo-site
+  name: visual-hive-demo-site-canary
   type: react-vite
   defaultBranch: main
   setupProfile: complex-app
@@ -51,7 +51,7 @@ targets:
     kind: deployPreview
     provider: github-pages
     urlEnv: VISUAL_HIVE_DEMO_PREVIEW_URL
-    fallbackUrl: "https://daviddiaz0317.github.io/visual-hive-demo-site/"
+    fallbackUrl: "https://daviddiaz0317.github.io/visual-hive-demo-site-canary/"
     prSafe: true
     schedule: "0 */12 * * *"
     cost: cheap
@@ -592,7 +592,7 @@ contracts:
       schedule: true
     steps:
       - action: goto
-        route: "/visual-hive-demo-site/"
+        route: "/visual-hive-demo-site-canary/"
         description: "Open the deployed demo preview."
       - action: assertVisible
         selector: "[data-testid='dashboard-page']"
@@ -602,11 +602,11 @@ contracts:
         - "[data-testid='dashboard-page']"
     screenshots:
       - name: deploy-preview-home
-        route: "/visual-hive-demo-site/"
+        route: "/visual-hive-demo-site-canary/"
         viewport: desktop
         fullPage: true
       - name: deploy-preview-smoke-mobile
-        route: "/visual-hive-demo-site/"
+        route: "/visual-hive-demo-site-canary/"
         viewport: mobile
         fullPage: true
 
