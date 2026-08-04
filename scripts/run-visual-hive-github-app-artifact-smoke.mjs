@@ -5,6 +5,7 @@ import { stat } from "node:fs/promises";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { classifyGitHubAppArtifactSmoke } from "./github-app-artifact-smoke-disposition.mjs";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const hiveDir = path.join(repoRoot, ".visual-hive");
@@ -47,16 +48,17 @@ const resultPath = path.join(outputDir, "github-app-webhook-result.json");
 const previewPath = path.join(outputDir, "github-app-issue-preview.md");
 const result = JSON.parse(await readFile(resultPath, "utf8"));
 const actions = Array.isArray(result.actions) ? result.actions : [];
-const publishesIssue = actions.some((action) => action.action === "create_or_update_visual_hive_issue");
-const delegatesToHive = actions.some(
-  (action) => action.action === "ignore" && String(action.reason ?? "").startsWith("managed_by_hive:")
+const issuesDocument = JSON.parse(await readFile(path.join(hiveDir, "issues.json"), "utf8"));
+const issueCandidateCount = Array.isArray(issuesDocument.issues) ? issuesDocument.issues.length : -1;
+const { publishesIssue, lifecycleDisposition } = classifyGitHubAppArtifactSmoke(
+  actions,
+  issueCandidateCount,
 );
 
 assert(result.externalCallsMade === 0, "GitHub App artifact smoke must make zero external calls.");
 assert(result.networkCallsMade === 0, "GitHub App artifact smoke must make zero network calls.");
 assert(result.checkoutPerformed === false, "GitHub App artifact smoke must not check out code.");
 assert(result.repoCodeExecuted === false, "GitHub App artifact smoke must not execute repo code.");
-assert(publishesIssue !== delegatesToHive, "GitHub App artifact smoke must either publish an issue preview or delegate issue ownership to Hive.");
 assertNoPathLeaks(JSON.stringify(result), "github-app-webhook-result.json");
 
 if (publishesIssue) {
@@ -74,7 +76,7 @@ const summary = {
   artifactRoot: ".visual-hive",
   outputDir: ".visual-hive/github-app-artifact-smoke",
   actions: actions.map((action) => action.action),
-  lifecycleDisposition: publishesIssue ? "standalone_issue_preview" : "managed_by_hive",
+  lifecycleDisposition,
   externalCallsMade: result.externalCallsMade,
   networkCallsMade: result.networkCallsMade,
   checkoutPerformed: result.checkoutPerformed,
