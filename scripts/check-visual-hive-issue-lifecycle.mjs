@@ -52,7 +52,7 @@ assert(resolvedIssue.status === "resolved_candidate", `expected resolved_candida
 assert(resolvedIssue.labels.includes("visual-hive/resolved-candidate"), "resolved candidate must include the resolved label.");
 assert(resolvedIssue.body.includes("Resolved Candidate Evidence"), "resolved candidate body must include resolved evidence.");
 
-await runVisualHive(["issues", "publish", "--config", configPath, "--dry-run", "--repo", "DavidDiaz0317/visual-hive-demo-site"]);
+await runVisualHive(["issues", "publish", "--config", configPath, "--dry-run", "--repo", "DavidDiaz0317/visual-hive-demo-site-canary"]);
 const publish = await readJson(path.join(workHiveDir, "issue-publish-result.json"));
 assert(publish.status === "dry_run_written", `expected dry_run_written publish status, got ${publish.status}.`);
 assert((publish.externalCallsMade ?? 0) === 0, "issue publish dry-run must make zero external calls.");
