@@ -9,6 +9,7 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".."
 const hiveDir = path.join(repoRoot, ".visual-hive");
 const summaryJsonPath = path.join(hiveDir, "external-full-run-summary.json");
 const summaryMarkdownPath = path.join(hiveDir, "external-full-run-summary.md");
+const issueAgentScripts = new Set(["vh:agent:issue", "vh:agent:validate", "vh:agent:write-preview"]);
 
 const DEFAULT_TIMEOUT_MS = 120_000;
 const TIMEOUTS = {
@@ -196,20 +197,30 @@ console.log("[external:full-run] starting Visual Hive external repo acceptance r
 
 for (const currentSection of sections) {
   const startedAt = Date.now();
+  const commandsRun = [];
+  const commandsSkipped = [];
   console.log(`\n[external:full-run] ${currentSection.name}`);
   try {
     for (const scriptName of currentSection.scripts) {
+      const skipReason = await commandSkipReason(currentSection.name, scriptName);
+      if (skipReason) {
+        commandsSkipped.push({ scriptName, reason: skipReason });
+        console.log(`[external:full-run] skipping ${scriptName}: ${skipReason}`);
+        continue;
+      }
       await runScript(scriptName);
+      commandsRun.push(scriptName);
     }
-    await currentSection.verify();
+    const verification = await currentSection.verify();
     if (currentSection.after) {
       await currentSection.after();
     }
     results.push({
       name: currentSection.name,
       status: "pass",
-      commandsRun: currentSection.scripts,
-      artifactsChecked: currentSection.artifactsChecked,
+      commandsRun,
+      commandsSkipped,
+      artifactsChecked: verification?.artifactsChecked ?? currentSection.artifactsChecked,
       durationMs: Date.now() - startedAt
     });
     console.log(`[external:full-run] ${currentSection.name}: pass`);
@@ -218,7 +229,8 @@ for (const currentSection of sections) {
     results.push({
       name: currentSection.name,
       status: "fail",
-      commandsRun: currentSection.scripts,
+      commandsRun,
+      commandsSkipped,
       artifactsChecked: currentSection.artifactsChecked,
       durationMs: Date.now() - startedAt,
       failureMessage: message
@@ -503,14 +515,9 @@ async function verifyIssueQueue() {
   const queue = await readJson("issue-queue.json");
   const publish = await readJson("issue-publish-result.json");
   const lifecycle = await readJson("issue-lifecycle-proof.json");
-  const validation = await readJson("agent-validation.json");
-  const agentRun = await readJson(await findFirstAgentArtifact("agent-run.json"));
-  const writePreview = await readJson(await findFirstAgentArtifact("write-preview.json"));
   const issuesMarkdown = await readText("issues.md");
   assert(issues.schemaVersion === "visual-hive.issues.v1", "issues.json must use the first-class issue schema.");
-  assert(Array.isArray(issues.issues) && issues.issues.length > 0, "issues.json must include issue candidates.");
-  assert(issues.issues.every((issue) => String(issue.dedupeFingerprint ?? "").startsWith("visual-hive:")), "every issue candidate must include a Visual Hive dedupe fingerprint.");
-  assert(issuesMarkdown.includes("Visual Hive") && issuesMarkdown.includes("Dedupe"), "issues.md must be human-readable issue evidence.");
+  assert(Array.isArray(issues.issues), "issues.json must include an issues array.");
   assert(queue.schemaVersion === "visual-hive.issue-queue.v1", "issue-queue.json must use the issue queue schema.");
   assert(Array.isArray(queue.queues?.ready_for_hive), "issue queue must group issues for Hive readiness.");
   assert(publish.mode === "dry_run", "default issue publish script must remain dry-run.");
@@ -535,6 +542,30 @@ async function verifyIssueQueue() {
   assert((lifecycle.externalCallsMade ?? 0) === 0, "issue lifecycle proof must make zero external calls.");
   assert((lifecycle.networkCallsMade ?? 0) === 0, "issue lifecycle proof must make zero network calls.");
   assert((lifecycle.realGithubIssuesCreated ?? 0) === 0, "issue lifecycle proof must create zero real issues.");
+  if (issues.issues.length === 0) {
+    assert(issues.summary?.total === 0, "zero-finding issue summary must report total=0.");
+    assert(queue.summary?.total === 0, "zero-finding issue queue must report total=0.");
+    assert(queue.queues.ready_for_hive.length === 0, "zero-finding issue queue must not route work to Hive.");
+    assert(queue.queues.ready_for_visual_hive_agent?.length === 0, "zero-finding issue queue must not route agent work.");
+    assert(/no issue candidates|total:\s*0|0 issue/i.test(issuesMarkdown), "issues.md must explain the zero-finding state.");
+    metrics.issueDryRuns += 1;
+    return {
+      artifactsChecked: [
+        ".visual-hive/issues.json",
+        ".visual-hive/issues.md",
+        ".visual-hive/issue-queue.json",
+        ".visual-hive/issue-publish-plan.json",
+        ".visual-hive/issue-publish-dry-run.json",
+        ".visual-hive/issue-publish-result.json",
+        ".visual-hive/issue-lifecycle-proof.json"
+      ]
+    };
+  }
+  assert(issues.issues.every((issue) => String(issue.dedupeFingerprint ?? "").startsWith("visual-hive:")), "every issue candidate must include a Visual Hive dedupe fingerprint.");
+  assert(issuesMarkdown.includes("Visual Hive") && issuesMarkdown.includes("Dedupe"), "issues.md must be human-readable issue evidence.");
+  const validation = await readJson("agent-validation.json");
+  const agentRun = await readJson(await findFirstAgentArtifact("agent-run.json"));
+  const writePreview = await readJson(await findFirstAgentArtifact("write-preview.json"));
   assert(agentRun.schemaVersion === "visual-hive.agent-issue-run.v1", "issue agent run must use the issue-run schema.");
   assert(agentRun.mode === "no_write", "default issue agent run must be no-write.");
   assert(agentRun.status === "completed", "default issue agent run must complete.");
@@ -561,6 +592,16 @@ async function verifyIssueQueue() {
   assert(writePreview.safety?.realGithubIssuesCreated === 0, "write-preview default proof must not create GitHub issues.");
   assert(writePreview.safety?.externalCallsMade === 0, "write-preview default proof must not make external calls.");
   metrics.issueDryRuns += 1;
+}
+
+async function commandSkipReason(sectionName, scriptName) {
+  if (sectionName !== "Issue queue and agent handoff" || !issueAgentScripts.has(scriptName)) {
+    return undefined;
+  }
+  const issues = await readJson("issues.json");
+  return Array.isArray(issues.issues) && issues.issues.length === 0
+    ? "clean evidence produced zero issue candidates; agent execution is intentionally not fabricated"
+    : undefined;
 }
 
 async function findFirstAgentArtifact(fileName) {
@@ -656,6 +697,7 @@ async function writeSummary(finalResult) {
         name: currentSection.name,
         status: result?.status ?? (currentSection.name === "External repo summary" ? "pass" : "fail"),
         commandsRun: result?.commandsRun ?? currentSection.scripts,
+        commandsSkipped: result?.commandsSkipped ?? [],
         artifactsChecked: result?.artifactsChecked ?? currentSection.artifactsChecked,
         durationMs: result?.durationMs ?? 0,
         ...(result?.failureMessage ? { failureMessage: result.failureMessage } : {})
@@ -704,9 +746,9 @@ function renderSummaryMarkdown(summary) {
     "",
     "## Sections",
     "",
-    "| Section | Status | Commands | Artifacts | Duration |",
-    "| --- | --- | ---: | ---: | ---: |",
-    ...summary.sections.map((entry) => `| ${entry.name} | ${entry.status} | ${entry.commandsRun.length} | ${entry.artifactsChecked.length} | ${entry.durationMs}ms |`),
+    "| Section | Status | Commands | Skipped | Artifacts | Duration |",
+    "| --- | --- | ---: | ---: | ---: | ---: |",
+    ...summary.sections.map((entry) => `| ${entry.name} | ${entry.status} | ${entry.commandsRun.length} | ${entry.commandsSkipped.length} | ${entry.artifactsChecked.length} | ${entry.durationMs}ms |`),
     "",
     "## Metrics",
     "",
