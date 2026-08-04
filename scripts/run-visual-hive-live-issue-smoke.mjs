@@ -11,7 +11,7 @@ const issuePath = path.join(hiveRoot, "hive-issue.md");
 const validationPath = path.join(hiveRoot, "hive-handoff-validation.json");
 const guardEnabled = process.env.VISUAL_HIVE_LIVE_GITHUB_ISSUE === "true";
 const token = process.env.GH_TOKEN ?? process.env.GITHUB_TOKEN;
-const repository = process.env.GITHUB_REPOSITORY ?? "DavidDiaz0317/visual-hive-demo-site";
+const repository = process.env.GITHUB_REPOSITORY ?? "DavidDiaz0317/visual-hive-demo-site-canary";
 const isPullRequest = Boolean(process.env.GITHUB_HEAD_REF || process.env.GITHUB_EVENT_NAME === "pull_request");
 const commandTimeoutMs = 120_000;
 
