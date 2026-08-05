@@ -55,9 +55,13 @@ jobs:
           npm run vh:handoff-validate
           npm run vh:github-app:artifact-smoke
           npm run vh:mcp:smoke
-          npm run vh:agent:issue
-          npm run vh:agent:validate
-          npm run vh:agent:write-preview
+          if node -e 'const { issues = [] } = require("./.visual-hive/issues.json"); process.exit(issues.length > 0 ? 0 : 1)'; then
+            npm run vh:agent:issue
+            npm run vh:agent:validate
+            npm run vh:agent:write-preview
+          else
+            echo "Skipping issue-agent execution: clean evidence produced zero issue candidates."
+          fi
           npm run vh:snapshot
           npm run vh:report -- --github-step-summary
           # This must remain the final evidence-producing command. The verifier
