@@ -1,5 +1,5 @@
 {
-  "acmm_level": 4,
+  "acmm_level": 5,
   "allowed_auto_merge_paths": [
     "**/*.spec.*",
     "**/*.test.*",
@@ -28,7 +28,7 @@
     "**/*.spec.*",
     "**/*_test.go"
   ],
-  "automation": "issues",
+  "automation": "repair-pr",
   "coverage": "comprehensive",
   "default_branch": "main",
   "distribution_manifest_sha256": "",
@@ -40,7 +40,7 @@
   "hosted_schedule": "",
   "hosted_state_branch": "hive/state-1311708545",
   "hosted_workflow_sha256": "",
-  "max_active_issues": 3,
+  "max_active_issues": 5,
   "max_repair_attempts": 4,
   "provider": "codex",
   "repository": "DavidDiaz0317/visual-hive-demo-site-canary",
