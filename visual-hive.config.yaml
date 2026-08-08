@@ -162,12 +162,12 @@ contracts:
         pullRequest: true
         schedule: true
       screenshots:
-        - fullPage: false
-          name: api-error-desktop
+        - name: api-error-desktop
+          fullPage: false
           route: /scenarios?issue=api-500
           viewport: desktop
-        - fullPage: false
-          name: api-error-state-contract-mobile
+        - name: api-error-state-contract-mobile
+          fullPage: false
           route: /scenarios?issue=api-500
           viewport: mobile
       selectors:
